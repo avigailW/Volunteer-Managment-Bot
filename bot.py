@@ -1,12 +1,15 @@
 import secret_settings
+import general_logic
 import logging
 import requests
 import telegram
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, \
     InlineQueryResultGif, KeyboardButton, ReplyKeyboardMarkup, Location
-from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filters, Updater, CallbackQueryHandler
+from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filters, Updater, CallbackQueryHandler, \
+    ConversationHandler
 
-import volunteer_logic as vl
+from model import does_area_exist, add_volunteer, get_all_areas
+from volunteer_logic import get_notification_status, set_notification_status, create_new_volunteer
 
 logging.basicConfig(
     format='[%(levelname)s %(asctime)s %(module)s:%(lineno)d] %(message)s',
@@ -17,65 +20,114 @@ logger = logging.getLogger(__name__)
 updater = Updater(token=secret_settings.BOT_TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 
+
 def start(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     logger.info(f"> Start chat #{chat_id}")
+    context.user_data["notification"]=False
     request_keyboard = telegram.KeyboardButton(text="request_help")
     volunteer_keyboard = telegram.KeyboardButton(text="volunteer")
     custom_keyboard = [[request_keyboard, volunteer_keyboard]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
     context.bot.send_message(chat_id=chat_id,
-                             text=f"""Welcome! if you are new volunteer: volunteer, to request help: request_help""",
+                             text=f"""Welcome!
+/volunteer - to volunteer, 
+/request_help - to open a request help,
+/show_all_areas - to show all our areas""",
                              reply_markup=reply_markup)
-    vl.create_new_volunteer(update, context)
+    create_new_volunteer(update, context)
 
-def register_volunteer(update: Update, context: CallbackContext):
+
+
+def volunteer(update: Update, context: CallbackContext):
+    #TODO: check if volunteer exist. if he exist-
     chat_id = update.effective_chat.id
     logger.info(f"> Volunteer chat #{chat_id}")
-    context.user_data["notification"] = False
-    keyboard = [[InlineKeyboardButton(f"Enable notifications", callback_data='change_notification_status')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    message=context.bot.send_message(chat_id=chat_id,
-                             text="""You are not receiving notifications.""",
-                             reply_markup=reply_markup)
-    context.user_data["notification_message_id"] = message.message_id
+
+    all_areas_list=get_all_areas()
+    notification_bottun_status = get_notification_status(update, context)
+    keyboard_status = "Disable" if notification_bottun_status else "Enable"
+    message_status = "are" if notification_bottun_status else "are not"
+    keyboard_areas=[]
+    keyboard_line = []
+    for i, ar in enumerate(all_areas_list,1):
+        keyboard_line.append(InlineKeyboardButton(f"⭕ {ar['name']}", callback_data=f'area_{i}'))
+        if i%3==0 :
+            keyboard_areas.append(keyboard_line)
+            keyboard_line=[]
+
+    keyboard_areas.append([InlineKeyboardButton(f"{keyboard_status} notifications", callback_data='change_notification_status')])
+    reply_markup_areas = InlineKeyboardMarkup(keyboard_areas)
+    message_volunteer = context.bot.send_message(chat_id=chat_id,text=f"""0 areas selected. You {message_status} receiving notifications.""",
+                                       reply_markup=reply_markup_areas)
+    context.user_data["volunteer_message_id"] = message_volunteer.message_id
+
 
 def request_help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     logger.info(f"> Volunteer chat #{chat_id}")
     context.bot.send_message(chat_id=chat_id, text=f"""Enter your request description + contact info.""")
-    
+
 
 def show_notification_message(update, context):
     chat_id = update.effective_chat.id
-    notification_bottun_status = vl.get_notification_status(update, context)
+
+    all_areas_list=get_all_areas()
+    notification_bottun_status = get_notification_status(update, context)
     keyboard_status = "Disable" if notification_bottun_status else "Enable"
     message_status = "are" if notification_bottun_status else "are not"
-    keyboard = [[InlineKeyboardButton(f"{keyboard_status} notifications", callback_data='change_notification_status')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    context.bot.edit_message_reply_markup(chat_id=chat_id,message_id=context.user_data["notification_message_id"],
-                             reply_markup=reply_markup)
-    context.bot.edit_message_text(chat_id=chat_id, message_id=context.user_data["notification_message_id"],
-                                          text=f"""You {message_status} receiving notifications.""",reply_markup=reply_markup)
+    keyboard_areas=[]
+    keyboard_line = []
+    for i, ar in enumerate(all_areas_list,1):
+        keyboard_line.append(InlineKeyboardButton(text=f"⭕ {ar['name']}", callback_data=f'area_{i}'))
+        if i%3==0 :
+            keyboard_areas.append(keyboard_line)
+            keyboard_line=[]
+    keyboard_areas.append([InlineKeyboardButton(f"{keyboard_status} notifications", callback_data='change_notification_status')])
+
+    reply_markup_areas = InlineKeyboardMarkup(keyboard_areas)
+    context.bot.editMessageReplyMarkup(chat_id=chat_id, message_id=context.user_data["volunteer_message_id"],
+                                          reply_markup=reply_markup_areas)
+    context.bot.editMessageText(chat_id=chat_id, message_id=context.user_data["volunteer_message_id"],
+                                  text=f"""0 areas selected. You {message_status} receiving notifications.""",
+                                       reply_markup=reply_markup_areas)
+
+
+
 
 def callback_handler(update: Update, context: CallbackContext):
     if update.callback_query.data == "change_notification_status":
-        vl.set_notification_status(update, context)
+        set_notification_status(update, context)
         show_notification_message(update,context)
+    if update.callback_query.data[:5]=="area_":
+        # update.callback_query.data ----> text---->
+        pass
+
+def show_all_areas(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    logger.info(f"> Show all areas chat #{chat_id}")
+    list_all_area= general_logic.get_all_areas_from_DB()
+    str_all_areas=""
+    for i,area in enumerate(list_all_area):
+        str_all_areas+=f"{i+1}. {area.capitalize()}\n"
+    context.bot.send_message(chat_id=chat_id, text=str_all_areas)
+
+
 
 def command_handler_buttons(update: Update, context: CallbackContext):
-
     if update.message['text'] == "volunteer":
-        register_volunteer(update, context)
+        volunteer(update, context)
     elif update.message['text'] == "request_help":
         request_help(update, context)
 
 def main():
     dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(CommandHandler('volunteer', register_volunteer))
+    dispatcher.add_handler(CommandHandler('volunteer', volunteer))
     dispatcher.add_handler(CommandHandler('request_help', request_help))
+    dispatcher.add_handler(CommandHandler('show_all_areas', show_all_areas))
     dispatcher.add_handler(CallbackQueryHandler(callback_handler, pass_chat_data=True))
     dispatcher.add_handler(MessageHandler(Filters.text, command_handler_buttons))
+
     logger.info("* Start polling...")
     updater.start_polling()  # Starts polling in a background thread.
     updater.idle()  # Wait until Ctrl+C is pressed

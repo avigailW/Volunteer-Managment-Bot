@@ -1,4 +1,3 @@
-
 from pymongo import MongoClient
 import pymongo
 
@@ -10,7 +9,7 @@ areas = db.get_collection("areas")
 requests_list = db.get_collection("requests")
 
 areas.create_index([('name', pymongo.ASCENDING)], unique=True)
-volunteers.create_index([('name', pymongo.ASCENDING)], unique=True)
+volunteers.create_index([('chat_id', pymongo.ASCENDING)], unique=True)
 requests_list.create_index([('request_id', pymongo.ASCENDING)], unique=True)
 
 request_id = 0
@@ -21,7 +20,7 @@ request_id = 0
 
 
 def init_areas():
-    area_list = ['Jerusalem', 'Tel Aviv', 'Haifa', 'Petach Tikva', 'Bnei Brak', 'Netanya', 'Ashdod']
+    area_list = ['jerusalem', 'tel aviv', 'haifa', 'petach tikva', 'bnei brak', 'netanya', 'ashdod']
     for area in area_list:
         info = {'name': area}
         areas.replace_one({'name': area}, info, upsert=True)
@@ -30,7 +29,7 @@ def get_all_areas():
     return areas.find()
 
 def does_area_exist(area):
-    return True if areas.find({'name': area}) else False
+    return True if areas.find({'name': area.lower()}).count() else False
 
 # receives one area, returns list of all volunteers whom their notification is on in that area
 def get_notified_volunteers_in_area(area):
@@ -54,8 +53,8 @@ def add_request(description, area):
     request_id += 1
     requests_list.replace_one({'description': description}, info, upsert=True)
 
-def update_volunteer_notification(name, notify):
-    volunteers.update_one({'name': name}, {'$set': {'notify': notify}})
+def update_volunteer_notification(chat_id):
+    volunteers.update_one({'chat_id': chat_id}, {'$set': {'notify': not get_notification_status_from_DB(chat_id)}})
 
 def update_request_status(req_id, staus):
     requests_list.update_one({'request_id': req_id}, {'$set': {'status': staus}})
@@ -63,3 +62,11 @@ def update_request_status(req_id, staus):
 def update_request_done(req_id):
     requests_list.update_one({'request_id': req_id}, {'$set': {'is_done': True}})
 
+def get_notification_status_from_DB(chat_id):
+    return volunteers.find({'chat_id': chat_id})[0]['notify']
+
+def add_area_to_volunteer(chat_id, area):
+    volunteers.update_one({'chat_id': chat_id}, {'$push': {'areas': area}})
+
+def delete_area_from_volunteer(chat_id, area):
+    volunteers.update_one({'chat_id': chat_id}, {'$pull': {'areas': area}})

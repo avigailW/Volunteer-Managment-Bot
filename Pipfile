@@ -8,6 +8,9 @@ pytest = "*"
 
 [packages]
 python-telegram-bot = "*"
+requests = "*"
+telegram = "*"
+pymongo = "*"
 
 [requires]
 python_version = "3.7"
