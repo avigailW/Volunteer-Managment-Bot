@@ -5,10 +5,11 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, \
     InlineQueryResultGif, KeyboardButton, ReplyKeyboardMarkup, Location
 from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filters, Updater, CallbackQueryHandler
 
-from model import update_volunteer_notification, add_volunteer, get_notification_status_from_DB, get_volunteer_areas
+from model import update_volunteer_notification, add_volunteer, get_notification_status_from_DB, get_volunteer_areas, \
+    add_area_to_volunteer, delete_area_from_volunteer
 
 
-def set_notification_status(update,context):
+def update_notification_status(update,context):
     chat_id = update.effective_chat.id
     update_volunteer_notification(chat_id)
 
@@ -36,3 +37,11 @@ def create_new_volunteer(update,context):
 def get_areas_of_volunteers(update,context):
     chat_id = update.effective_chat.id
     return get_volunteer_areas(chat_id)
+
+def add_area_to_volunteer_DB(update,context, area):
+    chat_id = update.effective_chat.id
+    add_area_to_volunteer(chat_id,area)
+
+def delete_area_from_volunteer_DB(update,context, area):
+    chat_id = update.effective_chat.id
+    delete_area_from_volunteer(chat_id, area)

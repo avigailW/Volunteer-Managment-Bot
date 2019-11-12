@@ -12,7 +12,7 @@ areas.create_index([('name', pymongo.ASCENDING)], unique=True)
 volunteers.create_index([('chat_id', pymongo.ASCENDING)], unique=True)
 requests_list.create_index([('request_id', pymongo.ASCENDING)], unique=True)
 
-request_id = 0
+request_id = requests_list.find().count()
 
 #area_info :  {'name'}
 #vol_info : {'name': , 'phone': , 'areas': [], 'notify': True , 'chat_id'}
@@ -55,6 +55,7 @@ def add_request(description, area):
     info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open', 'is_done': False}
     request_id += 1
     requests_list.replace_one({'description': description}, info, upsert=True)
+    return request_id-1
 
 def update_volunteer_notification(chat_id):
     volunteers.update_one({'chat_id': chat_id}, {'$set': {'notify': not get_notification_status_from_DB(chat_id)}})

@@ -4,13 +4,14 @@ import logging
 import requests
 import telegram
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, \
-    InlineQueryResultGif, KeyboardButton, ReplyKeyboardMarkup, Location
+    InlineQueryResultGif, KeyboardButton, ReplyKeyboardMarkup, Location, CallbackQuery
 from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filters, Updater, CallbackQueryHandler, \
     ConversationHandler
 
 from model import does_area_exist, add_volunteer, get_all_areas, init_areas
-from volunteer_logic import get_notification_status, set_notification_status, create_new_volunteer, \
-    get_areas_of_volunteers
+from request_logic import get_all_requests_from_DB, add_request_to_db
+from volunteer_logic import get_notification_status, create_new_volunteer, \
+    get_areas_of_volunteers, update_notification_status, delete_area_from_volunteer_DB, add_area_to_volunteer_DB
 
 logging.basicConfig(
     format='[%(levelname)s %(asctime)s %(module)s:%(lineno)d] %(message)s',
@@ -27,14 +28,15 @@ def start(update: Update, context: CallbackContext):
     logger.info(f"> Start chat #{chat_id}")
     context.user_data["notification"]=False
     request_keyboard = telegram.KeyboardButton(text="Open new request")
-    volunteer_keyboard = telegram.KeyboardButton(text="volunteer")
+    volunteer_keyboard = telegram.KeyboardButton(text="Volunteer")
     custom_keyboard = [[request_keyboard, volunteer_keyboard]]
-    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
+    reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True,one_time_keyboard=False)
     context.bot.send_message(chat_id=chat_id,
                              text=f"""Welcome!
 /volunteer - to volunteer, 
 /request_help - to open a request help,
-/show_all_areas - to show all our areas""",
+/show_all_areas - to show all our areas,
+/show_all_open_requests - to show all the open requests""",
                              reply_markup=reply_markup)
     create_new_volunteer(update, context)
 
@@ -69,7 +71,7 @@ def volunteer(update: Update, context: CallbackContext):
 
 def request_help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    logger.info(f"> Volunteer chat #{chat_id}")
+    logger.info(f"> Open new request chat #{chat_id}")
     context.bot.send_message(chat_id=chat_id, text=f"""Enter your request description + contact info.""")
 
 
@@ -103,13 +105,22 @@ def show_notification_message(update, context):
 
 
 def callback_handler(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+
     if update.callback_query.data == "change_notification_status":
-        set_notification_status(update, context)
+        update_notification_status(update, context)
         show_notification_message(update,context)
     if update.callback_query.data[:5]=="area_":
-        # update.callback_query.data ----> text---->
+        index_button=int(update.callback_query.data[5:])-1
+        all_areas_list = [ar['name'] for ar in get_all_areas()]
+        areas_of_volunteer = get_areas_of_volunteers(update, context)
+        area_name=all_areas_list[index_button]
+        if area_name in areas_of_volunteer: #remove area
+            delete_area_from_volunteer_DB(update,context,area_name)
+        else: ## add area
+            add_area_to_volunteer_DB(update,context,area_name)
+        show_notification_message(update, context)
 
-        pass
 
 def show_all_areas(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
@@ -122,17 +133,37 @@ def show_all_areas(update: Update, context: CallbackContext):
 
 
 
+
+def show_all_requests(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    logger.info(f"> Show all requests chat #{chat_id}")
+    list_all_requests = get_all_requests_from_DB()
+    str_all_requests = ""
+    for i, request in enumerate(list_all_requests,1):
+        str_all_requests += f"{request}\n"
+    context.bot.send_message(chat_id=chat_id, text=str_all_requests)
+
+
 def command_handler_buttons(update: Update, context: CallbackContext):
-    if update.message['text'] == "volunteer":
+    if update.message.text == "Volunteer":
         volunteer(update, context)
-    elif update.message['text'] == "Open new request":
+    elif update.message.text == "Open new request":
         request_help(update, context)
+    else:  # entered a description
+        request = update.message.text
+        context.bot.send_message(chat_id=update.message.chat_id, text=f'You have opened new request:'
+                                                                      f' {request}\n'
+                                                                      f'To approve, specify where the collect area is:')
+        #######
+        context.bot.send_message(chat_id=update.message.chat_id, text=add_request_to_db(update))
 
 def main():
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('volunteer', volunteer))
     dispatcher.add_handler(CommandHandler('request_help', request_help))
     dispatcher.add_handler(CommandHandler('show_all_areas', show_all_areas))
+    dispatcher.add_handler(CommandHandler('show_all_open_requests', show_all_requests))
+
     dispatcher.add_handler(CallbackQueryHandler(callback_handler, pass_chat_data=True))
     dispatcher.add_handler(MessageHandler(Filters.text, command_handler_buttons))
 
