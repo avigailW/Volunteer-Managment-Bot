@@ -15,8 +15,9 @@ requests_list.create_index([('request_id', pymongo.ASCENDING)], unique=True)
 
 request_id = 0
 
-#vol_info : {'name': , 'phone': , 'areas': [], 'notify': True }
-#req_info : {'description', 'area','status', 'is_done'}
+#area_info :  {'name'}
+#vol_info : {'name': , 'phone': , 'areas': [], 'notify': True , 'chat_id'}
+#req_info : {'request_id' ,'description', 'area','status', 'is_done'}
 
 
 def init_areas():
@@ -24,6 +25,9 @@ def init_areas():
     for area in area_list:
         info = {'name': area}
         areas.replace_one({'name': area}, info, upsert=True)
+
+def get_all_areas():
+    return areas.find()
 
 def does_area_exist(area):
     return True if areas.find({'name': area}) else False
@@ -33,15 +37,15 @@ def get_notified_volunteers_in_area(area):
     return volunteers.find({'areas': area, 'notify': True})
 
 def get_all_open_requests():
-    return requests_list.find()
+    return requests_list.find({'status': 'open'})
 
 # receives one area, returns list of all requests in that area
 def get_open_requests_in_area(area):
     return requests_list.find({'area': area, 'status': 'open'})
 
 #name = user_name, my_areas = list of areas, notify = boolean variable
-def add_volunteer(name, phone, my_areas, notify):
-    info = {'name': name, 'phone': phone, 'areas': my_areas, 'notify': notify}
+def add_volunteer(name, phone, my_areas, notify, chat_id):
+    info = {'name': name, 'phone': phone, 'areas': my_areas, 'notify': notify, 'chat_id': chat_id}
     volunteers.replace_one({'name': name}, info, upsert=True)
 
 def add_request(description, area):
@@ -56,15 +60,6 @@ def update_volunteer_notification(name, notify):
 def update_request_status(req_id, staus):
     requests_list.update_one({'request_id': req_id}, {'$set': {'status': staus}})
 
-def request_done(req_id):
+def update_request_done(req_id):
     requests_list.update_one({'request_id': req_id}, {'$set': {'is_done': True}})
 
-
-#
-# for vol in vol_list:
-#     volunteers.replace_one({'name': vol['name']}, vol, upsert=True)
-
-#
-# tmp = volunteers.find({'areas': 'Jerusalem'})   # whoever has Jerusalem included in their areas list
-# for i in tmp:
-#     print(i)
