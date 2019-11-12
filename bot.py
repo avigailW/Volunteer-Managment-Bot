@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 updater = Updater(token=secret_settings.BOT_TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 
-
 def start(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     logger.info(f"> Start chat #{chat_id}")
@@ -30,8 +29,6 @@ def start(update: Update, context: CallbackContext):
                              reply_markup=reply_markup)
     vl.create_new_volunteer(update, context)
 
-
-
 def register_volunteer(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     logger.info(f"> Volunteer chat #{chat_id}")
@@ -43,12 +40,11 @@ def register_volunteer(update: Update, context: CallbackContext):
                              reply_markup=reply_markup)
     context.user_data["notification_message_id"] = message.message_id
 
-
 def request_help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     logger.info(f"> Volunteer chat #{chat_id}")
     context.bot.send_message(chat_id=chat_id, text=f"""Enter your request description + contact info.""")
-
+    
 
 def show_notification_message(update, context):
     chat_id = update.effective_chat.id
@@ -62,16 +58,10 @@ def show_notification_message(update, context):
     context.bot.edit_message_text(chat_id=chat_id, message_id=context.user_data["notification_message_id"],
                                           text=f"""You {message_status} receiving notifications.""",reply_markup=reply_markup)
 
-
-
 def callback_handler(update: Update, context: CallbackContext):
     if update.callback_query.data == "change_notification_status":
         vl.set_notification_status(update, context)
         show_notification_message(update,context)
-
-
-
-
 
 def command_handler_buttons(update: Update, context: CallbackContext):
 
@@ -79,7 +69,6 @@ def command_handler_buttons(update: Update, context: CallbackContext):
         register_volunteer(update, context)
     elif update.message['text'] == "request_help":
         request_help(update, context)
-
 
 def main():
     dispatcher.add_handler(CommandHandler('start', start))

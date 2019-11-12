@@ -17,11 +17,12 @@ def get_notification_status(update,context):
     return context.user_data["notification"]
 
 def create_new_volunteer(update,context):
+    #message1 = update.message.chat
     message = update['message']
     chat = message['chat']
     id = chat['id']
-    first_name = chat['first_name']
-    last_name = chat['last_name']
+    first_name = update.message.chat.first_name
+    last_name = update.message.chat.last_name
     name = ""
     try:
          name = first_name + " "
