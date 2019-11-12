@@ -1,11 +1,11 @@
-# {YOUR BOT NAME HERE}
+מתחברים לחיים Mithbrim LaHaim
 <https://t.me/{BOT_ID}>
 
-{ONE LINE BOT DESCRIPTION HERE} 
+volunteer mangment 
 
-* {Participant 1 Name}
-* {Participant 2 Name}
-* {Participant 3 Name}
+* Efrat Kopelowitz 
+* Avikail Wilk
+* Esti David
 
 {OPTIONAL: MORE PROJECT INFO HERE}
 
