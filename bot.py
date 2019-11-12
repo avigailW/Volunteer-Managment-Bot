@@ -21,13 +21,15 @@ dispatcher = updater.dispatcher
 def start(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     logger.info(f"> Start chat #{chat_id}")
-    request_keyboard = telegram.KeyboardButton(text="/request_help")
-    volunteer_keyboard = telegram.KeyboardButton(text="/register_as_volunteer")
+    request_keyboard = telegram.KeyboardButton(text="request_help")
+    volunteer_keyboard = telegram.KeyboardButton(text="volunteer")
     custom_keyboard = [[request_keyboard, volunteer_keyboard]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
     context.bot.send_message(chat_id=chat_id,
-                             text=f"""Welcome! if you are new volunteer: /register_as_volunteer, to request help: /request_help""",
+                             text=f"""Welcome! if you are new volunteer: volunteer, to request help: request_help""",
                              reply_markup=reply_markup)
+    vl.create_new_volunteer(update, context)
+
 
 
 def register_volunteer(update: Update, context: CallbackContext):
@@ -37,20 +39,9 @@ def register_volunteer(update: Update, context: CallbackContext):
     keyboard = [[InlineKeyboardButton(f"Enable notifications", callback_data='change_notification_status')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     message=context.bot.send_message(chat_id=chat_id,
-                             text="""In which areas do you want to volunteer?
-No areas selected.
-You are not receiving notifications.""",
+                             text="""You are not receiving notifications.""",
                              reply_markup=reply_markup)
     context.user_data["notification_message_id"] = message.message_id
-
-    keyboard_OK = [[InlineKeyboardButton("register", callback_data='register')]]
-    reply_markup_OK = InlineKeyboardMarkup(keyboard_OK)
-    context.bot.se(chat_id=chat_id,
-                                       reply_markup=reply_markup_OK)
-
-    
-    
-
 
 
 def request_help(update: Update, context: CallbackContext):
@@ -69,9 +60,7 @@ def show_notification_message(update, context):
     context.bot.edit_message_reply_markup(chat_id=chat_id,message_id=context.user_data["notification_message_id"],
                              reply_markup=reply_markup)
     context.bot.edit_message_text(chat_id=chat_id, message_id=context.user_data["notification_message_id"],
-                                          text=f"""In which areas do you want to volunteer?
-No areas selected.
-You {message_status} receiving notifications.""",reply_markup=reply_markup)
+                                          text=f"""You {message_status} receiving notifications.""",reply_markup=reply_markup)
 
 
 
@@ -79,24 +68,25 @@ def callback_handler(update: Update, context: CallbackContext):
     if update.callback_query.data == "change_notification_status":
         vl.set_notification_status(update, context)
         show_notification_message(update,context)
-        logger.info(update.message)
-        logger.info(context)
 
 
-        
-    if update.callback_query.data == "register":
-        logger.info(update.message)
-        logger.info(context)
 
 
-    # vl.create_new_volunteer(update,context)
+
+def command_handler_buttons(update: Update, context: CallbackContext):
+
+    if update.message['text'] == "volunteer":
+        register_volunteer(update, context)
+    elif update.message['text'] == "request_help":
+        request_help(update, context)
+
 
 def main():
     dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(CommandHandler('register_as_volunteer', register_volunteer))
+    dispatcher.add_handler(CommandHandler('volunteer', register_volunteer))
     dispatcher.add_handler(CommandHandler('request_help', request_help))
     dispatcher.add_handler(CallbackQueryHandler(callback_handler, pass_chat_data=True))
-
+    dispatcher.add_handler(MessageHandler(Filters.text, command_handler_buttons))
     logger.info("* Start polling...")
     updater.start_polling()  # Starts polling in a background thread.
     updater.idle()  # Wait until Ctrl+C is pressed
