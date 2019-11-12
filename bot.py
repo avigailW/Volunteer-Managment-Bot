@@ -39,8 +39,6 @@ def start(update: Update, context: CallbackContext):
                              reply_markup=reply_markup)
     create_new_volunteer(update, context)
 
-
-
 def volunteer(update: Update, context: CallbackContext):
     #TODO: check if volunteer exist. if he exist-
     chat_id = update.effective_chat.id
@@ -64,13 +62,10 @@ def volunteer(update: Update, context: CallbackContext):
                                        reply_markup=reply_markup_areas)
     context.user_data["volunteer_message_id"] = message_volunteer.message_id
 
-
 def request_help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
-    logger.info(f"> Volunteer chat #{chat_id}")
+    logger.info(f"> open your request chat #{chat_id}")
     context.bot.send_message(chat_id=chat_id, text=f"""Enter your request description + contact info.""")
-
-
 
 def show_notification_message(update, context):
     chat_id = update.effective_chat.id
@@ -95,9 +90,6 @@ def show_notification_message(update, context):
                                   text=f"""0 areas selected. You {message_status} receiving notifications.""",
                                        reply_markup=reply_markup_areas)
 
-
-
-
 def callback_handler(update: Update, context: CallbackContext):
     if update.callback_query.data == "change_notification_status":
         set_notification_status(update, context)
@@ -115,8 +107,6 @@ def show_all_areas(update: Update, context: CallbackContext):
         str_all_areas+=f"{i+1}. {area.capitalize()}\n"
     context.bot.send_message(chat_id=chat_id, text=str_all_areas)
 
-
-
 def command_handler_buttons(update: Update, context: CallbackContext):
     logger.info(f"> command_handler_buttons {context}")
     if update.message.text == "volunteer":
@@ -129,7 +119,6 @@ def command_handler_buttons(update: Update, context: CallbackContext):
                                                                       f'To approve, specify where the collect area:')
 
         context.bot.send_message(chat_id=update.message.chat_id, text=add_request_to_db(update))
-
 
 def all_requests(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
