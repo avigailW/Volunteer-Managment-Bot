@@ -9,6 +9,7 @@ from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filter
     ConversationHandler
 
 from model import does_area_exist, add_volunteer, get_all_areas
+from request_logic import  add_request_to_db
 from volunteer_logic import get_notification_status, set_notification_status, create_new_volunteer
 
 logging.basicConfig(
@@ -69,6 +70,7 @@ def request_help(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=chat_id, text=f"""Enter your request description + contact info.""")
 
 
+
 def show_notification_message(update, context):
     chat_id = update.effective_chat.id
 
@@ -115,10 +117,14 @@ def show_all_areas(update: Update, context: CallbackContext):
 
 
 def command_handler_buttons(update: Update, context: CallbackContext):
-    if update.message['text'] == "volunteer":
+    logger.info(f"> command_handler_buttons {context}")
+    if update.message.text == "volunteer":
         volunteer(update, context)
-    elif update.message['text'] == "request_help":
+    elif update.message.text == "request_help":
         request_help(update, context)
+    else: #description
+        response = add_request_to_db(update,context)
+        context.bot.send_message(chat_id=update.message.chat_id, text=response)
 
 def main():
     dispatcher.add_handler(CommandHandler('start', start))

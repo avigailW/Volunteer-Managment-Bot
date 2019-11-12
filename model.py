@@ -48,10 +48,11 @@ def add_volunteer(name, phone, my_areas, notify, chat_id):
     volunteers.replace_one({'name': name}, info, upsert=True)
 
 def add_request(description, area):
-    global request_id
-    info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open', 'is_done': False}
-    request_id += 1
-    requests_list.replace_one({'description': description}, info, upsert=True)
+   global request_id
+   info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open', 'is_done': False}
+   request_id += 1
+   requests_list.replace_one({'description': description}, info, upsert=True)
+   return request_id - 1
 
 def update_volunteer_notification(chat_id):
     volunteers.update_one({'chat_id': chat_id}, {'$set': {'notify': not get_notification_status_from_DB(chat_id)}})
@@ -70,3 +71,8 @@ def add_area_to_volunteer(chat_id, area):
 
 def delete_area_from_volunteer(chat_id, area):
     volunteers.update_one({'chat_id': chat_id}, {'$pull': {'areas': area}})
+
+
+
+
+init_areas()
