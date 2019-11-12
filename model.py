@@ -10,7 +10,7 @@ areas = db.get_collection("areas")
 requests_list = db.get_collection("requests")
 
 areas.create_index([('name', pymongo.ASCENDING)], unique=True)
-volunteers.create_index([('name', pymongo.ASCENDING)], unique=True)
+volunteers.create_index([('chat_id', pymongo.ASCENDING)], unique=True)
 requests_list.create_index([('request_id', pymongo.ASCENDING)], unique=True)
 
 request_id = 0
@@ -54,8 +54,8 @@ def add_request(description, area):
     request_id += 1
     requests_list.replace_one({'description': description}, info, upsert=True)
 
-def update_volunteer_notification(name, notify):
-    volunteers.update_one({'name': name}, {'$set': {'notify': notify}})
+def update_volunteer_notification(chat_id, notify):
+    volunteers.update_one({'chat_id': chat_id}, {'$set': {'notify': notify}})
 
 def update_request_status(req_id, staus):
     requests_list.update_one({'request_id': req_id}, {'$set': {'status': staus}})
