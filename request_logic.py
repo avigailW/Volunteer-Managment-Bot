@@ -1,11 +1,10 @@
 from model import add_request, get_all_open_requests
 
 
-def add_request_to_db(update):
-    description=update.message.text
-    area=""
+def add_request_to_db(description, area):
     request_id = add_request(description,area)
-    return f'Your request has been saved. Your case is #{request_id} for follow up.'
+    return request_id
+
 
 def get_all_requests_from_DB():
     all_requests = get_all_open_requests()
