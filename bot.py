@@ -34,7 +34,8 @@ def start(update: Update, context: CallbackContext):
                              text=f"""Welcome!
 /volunteer - to volunteer, 
 /request_help - to open a request help,
-/show_all_areas - to show all our areas""",
+/show_all_areas - to show all our areas
+/show_all_open_requests - to show all open requests""",
                              reply_markup=reply_markup)
     create_new_volunteer(update, context)
 
@@ -123,8 +124,11 @@ def command_handler_buttons(update: Update, context: CallbackContext):
     elif update.message.text == "request_help":
         request_help(update, context)
     else: #description
-        response = add_request_to_db(update,context)
-        context.bot.send_message(chat_id=update.message.chat_id, text=response)
+        request = update.message.text
+        context.bot.send_message(chat_id=update.message.chat_id, text=f'You have added {request}\n'
+                                                                      f'To approve, specify where the collect area:')
+
+        context.bot.send_message(chat_id=update.message.chat_id, text=add_request_to_db(update))
 
 
 def all_requests(update: Update, context: CallbackContext):
@@ -143,7 +147,7 @@ def main():
     dispatcher.add_handler(CommandHandler('volunteer', volunteer))
     dispatcher.add_handler(CommandHandler('request_help', request_help))
     dispatcher.add_handler(CommandHandler('show_all_areas', show_all_areas))
-    dispatcher.add_handler(CommandHandler('all_requests', all_requests))
+    dispatcher.add_handler(CommandHandler('show_all_open_requests', all_requests))
 
     dispatcher.add_handler(CallbackQueryHandler(callback_handler, pass_chat_data=True))
     dispatcher.add_handler(MessageHandler(Filters.text, command_handler_buttons))
