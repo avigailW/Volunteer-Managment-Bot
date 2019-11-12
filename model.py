@@ -25,8 +25,12 @@ def init_areas():
         info = {'name': area}
         areas.replace_one({'name': area}, info, upsert=True)
 
+def get_all_areas():
+   return areas.find({})
+
 def does_area_exist(area):
-    return True if areas.find({'name': area}) else False
+    # print(areas.find({'name': area}))
+    return True if areas.find({'name': area}).count() else False
 
 # receives one area, returns list of all volunteers whom their notification is on in that area
 def get_notified_volunteers_in_area(area):
