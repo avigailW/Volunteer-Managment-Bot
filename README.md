@@ -1,4 +1,4 @@
-{מחוברים לחיים Mehubarim LaHaim}
+## מחוברים לחיים Mehubarim LaHaim
 <https://t.me/{BOT_ID}>
 
 volunteer mangment 
