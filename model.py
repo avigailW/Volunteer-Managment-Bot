@@ -12,7 +12,7 @@ areas.create_index([('name', pymongo.ASCENDING)], unique=True)
 volunteers.create_index([('chat_id', pymongo.ASCENDING)], unique=True)
 requests_list.create_index([('request_id', pymongo.ASCENDING)], unique=True)
 
-request_id = 0
+request_id = request_id = requests_list.find().count()
 
 #area_info :  {'name'}
 #vol_info : {'name': , 'phone': , 'areas': [], 'notify': True , 'chat_id'}
@@ -75,4 +75,4 @@ def delete_area_from_volunteer(chat_id, area):
 
 
 
-init_areas()
+#init_areas()

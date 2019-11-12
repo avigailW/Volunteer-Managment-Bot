@@ -9,7 +9,7 @@ from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filter
     ConversationHandler
 
 from model import does_area_exist, add_volunteer, get_all_areas
-from request_logic import  add_request_to_db
+from request_logic import add_request_to_db, get_all_requests_from_DB
 from volunteer_logic import get_notification_status, set_notification_status, create_new_volunteer
 
 logging.basicConfig(
@@ -126,11 +126,25 @@ def command_handler_buttons(update: Update, context: CallbackContext):
         response = add_request_to_db(update,context)
         context.bot.send_message(chat_id=update.message.chat_id, text=response)
 
+
+def all_requests(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    logger.info(f"> Show all requests chat #{chat_id}")
+    list_all_requests = get_all_requests_from_DB()
+    str_all_requests = ""
+    for i, request in enumerate(list_all_requests,1):
+        str_all_requests += f"{request}\n"
+    context.bot.send_message(chat_id=chat_id, text=str_all_requests)
+
+
 def main():
+
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('volunteer', volunteer))
     dispatcher.add_handler(CommandHandler('request_help', request_help))
     dispatcher.add_handler(CommandHandler('show_all_areas', show_all_areas))
+    dispatcher.add_handler(CommandHandler('all_requests', all_requests))
+
     dispatcher.add_handler(CallbackQueryHandler(callback_handler, pass_chat_data=True))
     dispatcher.add_handler(MessageHandler(Filters.text, command_handler_buttons))
 
