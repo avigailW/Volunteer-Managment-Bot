@@ -8,7 +8,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, \
 from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filters, Updater, CallbackQueryHandler, \
     ConversationHandler
 
-from model import does_area_exist, add_volunteer
+from model import does_area_exist, add_volunteer, get_all_areas
 from volunteer_logic import get_notification_status, set_notification_status
 
 logging.basicConfig(
@@ -35,7 +35,6 @@ def start(update: Update, context: CallbackContext):
 /request_help - to open a request help,
 /show_all_areas - to show all our areas""",
                              reply_markup=reply_markup)
-    # add_volunteer() #TODO:: esti
 
 
 
@@ -43,20 +42,24 @@ def volunteer(update: Update, context: CallbackContext):
     #TODO: check if volunteer exist. if he exist-
     chat_id = update.effective_chat.id
     logger.info(f"> Volunteer chat #{chat_id}")
-    context.user_data["notification"] = get_notification_status(update,context)
-#     context.bot.send_message(chat_id=chat_id,text=f"""In which areas do you want to volunteer?
-# Please enter all your wanted areas, seperated by comma.
-#
-# To see all the areas press /show_all_areas.""")
-    context.user_data["status_process"]="volunteer"
-    keyboard = [[InlineKeyboardButton(f"Enable notifications", callback_data='change_notification_status')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    message=context.bot.send_message(chat_id=chat_id,
-                             text=f"""In which areas do you want to volunteer?
-No areas selected.
-You are not receiving notifications.""",
-                             reply_markup=reply_markup)
-    context.user_data["notification_message_id"]=message.message_id
+    # context.user_data["notification"] = get_notification_status(update,context)
+
+    # context.user_data["status_process"]="volunteer"
+#     keyboard = [[InlineKeyboardButton(f"Enable notifications", callback_data='change_notification_status')]]
+#     reply_markup = InlineKeyboardMarkup(keyboard)
+#     message=context.bot.send_message(chat_id=chat_id,
+#                              text=f"""In which areas do you want to volunteer?
+# No areas selected.
+# You are not receiving notifications.""",
+#                              reply_markup=reply_markup)
+#     context.user_data["notification_message_id"]=message.message_id
+
+    all_areas_list=get_all_areas()
+    keyboard_areas=[[ InlineKeyboardButton(f"⭕ {i} {ar['name']}", callback_data=f'area_{i}')]for i,ar in enumerate(all_areas_list)]
+    reply_markup_areas = InlineKeyboardMarkup(keyboard_areas)
+    message_area = context.bot.send_message(chat_id=chat_id,text=f"""0 areas selected.""",
+                                       reply_markup=reply_markup_areas)
+    context.user_data["areas_volunteer_message_id"] = message_area.message_id
 
 
 def request_help(update: Update, context: CallbackContext):
