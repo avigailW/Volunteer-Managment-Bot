@@ -26,10 +26,13 @@ def init_areas():
         areas.replace_one({'name': area}, info, upsert=True)
 
 def get_all_areas():
-    return areas.find()
+    return areas.find({})
 
 def does_area_exist(area):
     return True if areas.find({'name': area.lower()}).count() else False
+
+def get_volunteer_areas(chat_id):
+    return  volunteers.find({'chat_id': chat_id})[0]['areas']
 
 # receives one area, returns list of all volunteers whom their notification is on in that area
 def get_notified_volunteers_in_area(area):
@@ -70,3 +73,7 @@ def add_area_to_volunteer(chat_id, area):
 
 def delete_area_from_volunteer(chat_id, area):
     volunteers.update_one({'chat_id': chat_id}, {'$pull': {'areas': area}})
+
+
+
+init_areas()

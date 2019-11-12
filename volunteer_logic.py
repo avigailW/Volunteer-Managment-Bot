@@ -5,7 +5,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, \
     InlineQueryResultGif, KeyboardButton, ReplyKeyboardMarkup, Location
 from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filters, Updater, CallbackQueryHandler
 
-from model import update_volunteer_notification, add_volunteer,get_notification_status_from_DB
+from model import update_volunteer_notification, add_volunteer, get_notification_status_from_DB, get_volunteer_areas
 
 
 def set_notification_status(update,context):
@@ -32,3 +32,7 @@ def create_new_volunteer(update,context):
         last_name = "@"
         name += last_name
     add_volunteer(name, " ", [] , False,id)
+
+def get_areas_of_volunteers(update,context):
+    chat_id = update.effective_chat.id
+    return get_volunteer_areas(chat_id)
