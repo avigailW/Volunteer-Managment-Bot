@@ -29,6 +29,9 @@ def init_areas():
 def get_all_areas():
     return areas.find()
 
+def get_volunteer_area(chat_id):
+    volunteers.find({'chat_id': chat_id})[0]['areas']
+
 def does_area_exist(area):
     return True if areas.find({'name': area.lower()}).count() else False
 
@@ -64,7 +67,7 @@ def update_request_done(req_id):
     requests_list.update_one({'request_id': req_id}, {'$set': {'is_done': True}})
 
 def get_notification_status(chat_id):
-    return volunteers.find({'chat_id': chat_id})['notify']
+    return volunteers.find({'chat_id': chat_id})[0]['notify']
 
 def add_area_to_volunteer(chat_id, area):
     volunteers.update_one({'chat_id': chat_id}, {'$push': {'areas': area}})
