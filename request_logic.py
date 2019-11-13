@@ -1,7 +1,5 @@
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
-
 from model import add_request, get_all_open_requests, get_request, get_requests_area, get_notified_volunteers_in_area, \
-    update_request_status, get_volunteer_areas
+    update_request_status, get_volunteer_areas, get_open_requests_in_area
 
 
 def update_request_status_db(request_id,status):
@@ -41,6 +39,6 @@ def get_requests_in_volunteer_area(update,context):
 
 def get_requests_in_area(update,context):
     all_requests = []
-    area = update.callback_query.message.text.split(":")[1].strip(" ")
+    area = update.callback_query.message.text.split(":")[1].strip()
     all_requests.append([(ar['request_id'], ar['description'], ar['area']) for ar in get_open_requests_in_area(area)])
     return all_requests

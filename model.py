@@ -35,6 +35,9 @@ def does_area_exist(area):
 def get_volunteer_areas(chat_id):
     return  volunteers.find({'chat_id': chat_id})[0]['areas']
 
+def check_if_volunteer_exist(chat_id):
+    return volunteers.find({'chat_id': chat_id}).count() >0
+
 # receives one area, returns list of all volunteers whom their notification is on in that area
 def get_notified_volunteers_in_area(area):
     return volunteers.find({'areas': area, 'notify': True})
@@ -46,6 +49,7 @@ def get_all_open_requests():
 def get_open_requests_in_area(area):
     return requests_list.find({'area': area, 'status': 'open'})
 
+
 #name = user_name, my_areas = list of areas, notify = boolean variable
 def add_volunteer(name, phone, my_areas, notify, chat_id):
     info = {'name': name, 'phone': phone, 'areas': my_areas, 'notify': notify, 'chat_id': chat_id}
@@ -55,7 +59,18 @@ def add_request(description, area):
     global request_id
     request_id += 1
     info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open', 'is_done': False}
-    requests_list.replace_one({'description': description}, info, upsert=True)
+    while True:
+        try:
+            requests_list.replace_one({'description': description}, info, upsert=True)
+            break
+        except (pymongo.errors.DuplicateKeyError):
+            request_id += 1
+            info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open',
+                    'is_done': False}
+            requests_list.replace_one({'description': description}, info, upsert=True)
+
+
+
     return request_id
 
 def update_volunteer_notification(chat_id):

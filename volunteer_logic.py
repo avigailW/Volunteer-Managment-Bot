@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, \
 from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filters, Updater, CallbackQueryHandler
 
 from model import update_volunteer_notification, add_volunteer, get_notification_status_from_DB, get_volunteer_areas, \
-    add_area_to_volunteer, delete_area_from_volunteer
+    add_area_to_volunteer, delete_area_from_volunteer, check_if_volunteer_exist
 
 
 def update_notification_status(update,context):
@@ -16,6 +16,8 @@ def update_notification_status(update,context):
 def get_notification_status(update,context):
     chat_id = update.effective_chat.id
     return get_notification_status_from_DB(chat_id)
+
+
 
 def create_new_volunteer(update,context):
     first_name = update.message.chat.first_name
@@ -32,7 +34,8 @@ def create_new_volunteer(update,context):
     except:
         last_name = "@"
         name += last_name
-    add_volunteer(name, " ", [] , False,id)
+    if not check_if_volunteer_exist(update.effective_chat.id):
+        add_volunteer(name, " ", [] , False,id)
 
 def get_areas_of_volunteers(update,context):
     chat_id = update.effective_chat.id
