@@ -11,7 +11,7 @@ volunteer managment
 
 ## Screenshots
 
-![SCREESHOT DECSRIPTION](screenshots/snip_bot.png)
+![SCREESHOT DECSRIPTION](screenshots/snip_bot.PNG)
 
 ## How to Run This Bot
 ### Prerequisites
