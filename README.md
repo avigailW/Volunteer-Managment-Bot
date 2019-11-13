@@ -1,5 +1,5 @@
 ## מחוברים לחיים Mehubarim LaHaim
-<https://t.me/{BOT_ID}>
+t.me/Mehubarim_Lachaim_bot
 
 volunteer managment 
 
