@@ -9,7 +9,8 @@ from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filter
     ConversationHandler
 from settings import colors
 from model import does_area_exist, add_volunteer, get_all_areas, init_areas, get_request
-from request_logic import get_all_requests_from_DB, add_request_to_db, update_request_status_db
+from request_logic import get_all_requests_from_DB, add_request_to_db, update_request_status_db, \
+    get_requests_in_volunteer_area
 from volunteer_logic import get_notification_status, create_new_volunteer, \
     get_areas_of_volunteers, update_notification_status, delete_area_from_volunteer_DB, add_area_to_volunteer_DB
 
@@ -26,19 +27,24 @@ dispatcher = updater.dispatcher
 def start(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     logger.info(f"> Start chat #{chat_id}")
-    context.user_data["notification"] = False
+    context.user_data["request_status"] = "no status"
     request_keyboard = telegram.KeyboardButton(text="Open new request")
     volunteer_keyboard = telegram.KeyboardButton(text="Volunteer")
     custom_keyboard = [[request_keyboard, volunteer_keyboard]]
     reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True, one_time_keyboard=False)
-    context.bot.send_message(chat_id=chat_id,
-                             text=f"""Welcome!
-/volunteer - to volunteer, 
+    # context.bot.setChatPhoto(chat_id=chat_id, photo=open(r"C:\Users\efrat2\Hackaton\xt-bareket-bot-hackathon-efrat_avigail_esti\images\logo.png", 'rb'))
+    context.bot.sendPhoto(chat_id=chat_id,photo=open(r"C:\Users\efrat2\Hackaton\xt-bareket-bot-hackathon-efrat_avigail_esti\images\immage2.jpg",'rb'),
+                            caption=f"""Welcome to our project bot!
+                            
+For using the bot: 
+
+/volunteer - to volunteer,
 /request_help - to open a request help,
 /show_all_areas - to show all our areas,
 /show_all_open_requests - to show all the open requests,
-/show_all_open_requests - to show all the open requests
-/show_all_open_requests - to show all the open requests""",
+/requests_in_my_areas - to show all opened requests in your selected areas,
+/requests_by_area - to show all opened requests in a selected area,
+/about_us - about "connected to life" """,
                              reply_markup=reply_markup)
     create_new_volunteer(update, context)
 
@@ -197,11 +203,15 @@ def command_handler_buttons(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     if update.message.text == "Volunteer":
         volunteer(update, context)
+
     elif update.message.text == "Open new request":
         request_help(update, context)
-    else:  # entered a description
+        context.user_data["request_status"] = "Open new request"
+
+    elif context.user_data["request_status"] == "Open new request":  # entered a description
         request_description = update.message.text
         context.user_data["request_description"]=request_description
+        context.user_data["request_status"] = "no status"
 
         all_areas_list = [ar['name'] for ar in get_all_areas()]
         keyboard_areas = []
@@ -221,6 +231,46 @@ def command_handler_buttons(update: Update, context: CallbackContext):
         context.user_data["message_area_request"]=message.message_id
 
 
+def requests_in_wanted_areas(update: Update, context: CallbackContext):
+
+    chat_id = update.effective_chat.id
+    logger.info(f"> requests_in_wanted_areas #{chat_id} ")
+
+    list_requests = get_requests_in_volunteer_area(update,context)
+    str_all_requests = ""
+    for request in list_requests:
+        for r in request:
+            str_all_requests += f"#{r[0] } : {r[1]}  {r[2]}\n"
+    context.bot.send_message(chat_id=chat_id, text=str_all_requests)
+    update_areas_for_request(update, context,'confirm_area_for_request','r_area_')
+
+
+def requests_by_area(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    logger.info(f"> requests_by_area #{chat_id} ")
+
+    ###TODO CODE SHOLED BE IN A FUNCTION
+    all_areas_list = [ar['name'] for ar in get_all_areas()]
+    keyboard_areas = []
+    keyboard_line = []
+    for i, area in enumerate(all_areas_list, 1):
+        keyboard_line.append(InlineKeyboardButton(f"⭕ {area.capitalize()}", callback_data=f'r_A_area_{i}'))
+        if i % 3 == 0:
+            keyboard_areas.append(keyboard_line)
+            keyboard_line = []
+    keyboard_areas.append(
+        [InlineKeyboardButton(f"confirm area", callback_data=f'confirm_area_for_search')])
+    reply_markup_areas = InlineKeyboardMarkup(keyboard_areas)
+
+    message = context.bot.send_message(chat_id=chat_id, text=f'Select an area to show requests in that area:',reply_markup=reply_markup_areas)
+    context.user_data["message_area_request"] = message.message_id
+
+
+def about_us(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    logger.info(f"> about us #{chat_id} ")
+    context.bot.send_message(chat_id=chat_id, text=f'about us')
+
 
 def main():
     dispatcher.add_handler(CommandHandler('start', start))
@@ -228,9 +278,15 @@ def main():
     dispatcher.add_handler(CommandHandler('request_help', request_help))
     dispatcher.add_handler(CommandHandler('show_all_areas', show_all_areas))
     dispatcher.add_handler(CommandHandler('show_all_open_requests', show_all_requests))
+    dispatcher.add_handler(CommandHandler('requests_in_my_areas', requests_in_wanted_areas))
+    dispatcher.add_handler(CommandHandler('requests_by_area', requests_by_area))
+    dispatcher.add_handler(CommandHandler('about_us', about_us))
 
     dispatcher.add_handler(CallbackQueryHandler(callback_handler, pass_chat_data=True))
     dispatcher.add_handler(MessageHandler(Filters.text, command_handler_buttons))
+
+
+
 
     logger.info("* Start polling...")
     updater.start_polling()  # Starts polling in a background thread.
