@@ -1,7 +1,7 @@
 ## מחוברים לחיים Mehubarim LaHaim
 <https://t.me/{BOT_ID}>
 
-volunteer mangment 
+volunteer managment 
 
 * Efrat Kopelowitz 
 * Avikail Wilk
@@ -17,7 +17,7 @@ volunteer mangment
 ### Prerequisites
 * Python 3.7
 * pipenv
-* {ADD MORE DEPENDENCIES HERE - FOR EXAMPLE MONGODB OR ANYTHING ELSE}
+* mongoDB
 
 ### Setup
 * Clone this repo from github
@@ -44,7 +44,8 @@ To run all test  use:
 (Or just `pytest` if running in a pipenv shell.)
 
 ## Credits and References
+* Shoham Cohen - for help with buttons and handlers.
 * [Telegram Docs](https://core.telegram.org/bots)
 * [python-telegram-bot](https://github.com/python-telegram-bot/python-telegram-bot)
-* {ADD MORE REFERENCES TO LIBRARIES, APIS AND CODE SNIPPETS HERE}
+* [w3school] (https://www.w3schools.com/python/python_mongodb_getstarted.asp)
 
