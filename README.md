@@ -11,7 +11,7 @@ volunteer managment
 
 ## Screenshots
 
-![SCREESHOT DECSRIPTION](screenshots/shopping-list-bot-1.png)
+![SCREESHOT DECSRIPTION](screenshots/snip_bot.png)
 
 ## How to Run This Bot
 ### Prerequisites
