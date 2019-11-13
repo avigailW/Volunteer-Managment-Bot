@@ -12,7 +12,7 @@ areas.create_index([('name', pymongo.ASCENDING)], unique=True)
 volunteers.create_index([('chat_id', pymongo.ASCENDING)], unique=True)
 requests_list.create_index([('request_id', pymongo.ASCENDING)], unique=True)
 
-request_id = request_id = requests_list.find().count()
+request_id = requests_list.find().count()
 
 #area_info :  {'name'}
 #vol_info : {'name': , 'phone': , 'areas': [], 'notify': True , 'chat_id'}
@@ -26,10 +26,13 @@ def init_areas():
         areas.replace_one({'name': area}, info, upsert=True)
 
 def get_all_areas():
-    return areas.find()
+    return areas.find({})
 
 def does_area_exist(area):
     return True if areas.find({'name': area.lower()}).count() else False
+
+def get_volunteer_areas(chat_id):
+    return  volunteers.find({'chat_id': chat_id})[0]['areas']
 
 # receives one area, returns list of all volunteers whom their notification is on in that area
 def get_notified_volunteers_in_area(area):
@@ -48,11 +51,11 @@ def add_volunteer(name, phone, my_areas, notify, chat_id):
     volunteers.replace_one({'name': name}, info, upsert=True)
 
 def add_request(description, area):
-   global request_id
-   info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open', 'is_done': False}
-   request_id += 1
-   requests_list.replace_one({'description': description}, info, upsert=True)
-   return request_id - 1
+    global request_id
+    info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open', 'is_done': False}
+    request_id += 1
+    requests_list.replace_one({'description': description}, info, upsert=True)
+    return request_id-1
 
 def update_volunteer_notification(chat_id):
     volunteers.update_one({'chat_id': chat_id}, {'$set': {'notify': not get_notification_status_from_DB(chat_id)}})
@@ -74,5 +77,4 @@ def delete_area_from_volunteer(chat_id, area):
 
 
 
-
-#init_areas()
+init_areas()
