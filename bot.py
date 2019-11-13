@@ -26,8 +26,10 @@ dispatcher = updater.dispatcher
 
 def start(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
+    context.bot.deleteMessage(chat_id=chat_id)
     logger.info(f"> Start chat #{chat_id}")
     context.user_data["notification"] = False
+    context.user_data["request_status"] = "no status"
     request_keyboard = telegram.KeyboardButton(text="Open new request")
     volunteer_keyboard = telegram.KeyboardButton(text="Volunteer")
     custom_keyboard = [[request_keyboard, volunteer_keyboard]]
@@ -132,7 +134,7 @@ def callback_handler(update: Update, context: CallbackContext):
         show_notification_message(update, context)
     if update.callback_query.data[:7] == "r_area_":
         search_inline_bottun_of_area(update,context)
-        update_areas_for_request(update, context)
+        update_areas_for_request(update, context,'confirm_area_for_request', 'r_area_')
 
     if update.callback_query.data[:9] == "r_A_area_":
         search_inline_bottun_of_area(update, context)
@@ -141,7 +143,7 @@ def callback_handler(update: Update, context: CallbackContext):
 
     if update.callback_query.data=="confirm_area_for_request":
         logger.info(f"> confirm_area_for_request #{chat_id}")
-        request_id, _, _=add_request_to_db(context.user_data["request_description"],context.user_data["request_area"])
+        request_id=add_request_to_db(context.user_data["request_description"],context.user_data["request_area"])
         context.bot.send_message(chat_id=update.callback_query.message.chat.id,text=f'Your request has been saved. Your case is #{request_id} for follow up.')
 
     if update.callback_query.data=="confirm_area_for_search":
@@ -208,12 +210,16 @@ def command_handler_buttons(update: Update, context: CallbackContext):
     if update.message.text == "Volunteer":
         volunteer(update, context)
     elif update.message.text == "Open new request":
+        context.user_data["request_status"] = "Open new request"
         request_help(update, context)
-    else:  # entered a description
+
+
+    elif context.user_data["request_status"] == "Open new request":  # entered a description
         request_description = update.message.text
         context.user_data["request_description"]=request_description
+        context.user_data["request_status"] = "no status"
 
-###TODO SET THIS INTO FUNCTION!!!! THIS CODE IS USED A FEW TIMES!!!!
+        ###TODO SET THIS INTO FUNCTION!!!! THIS CODE IS USED A FEW TIMES!!!!
         all_areas_list = [ar['name'] for ar in get_all_areas()]
         keyboard_areas = []
         keyboard_line = []
