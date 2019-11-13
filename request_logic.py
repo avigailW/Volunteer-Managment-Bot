@@ -1,9 +1,27 @@
-from model import add_request, get_all_open_requests
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+
+from model import add_request, get_all_open_requests, get_request, get_requests_area, get_notified_volunteers_in_area, \
+    update_request_status
 
 
-def add_request_to_db(description, area):
-    request_id = add_request(description,area)
-    return request_id
+def update_request_status_db(request_id,status):
+    update_request_status(request_id,status)
+
+
+def volunteers_to_publish_request(request_id, context):
+    description = get_request(request_id)[0]['description']
+    request_area = get_requests_area(request_id)
+    volunteers = get_notified_volunteers_in_area(request_area)
+    return description, volunteers
+
+
+
+def add_request_to_db(context):
+   description = context.user_data["request_description"]
+   area = context.user_data["request_area"]
+   request_id = add_request(description,area)
+   description, volunteers = volunteers_to_publish_request(request_id, context)
+   return request_id, description, volunteers
 
 
 def get_all_requests_from_DB():

@@ -7,6 +7,7 @@ db = client.get_database("mechubarim_l'chaim_db")
 volunteers = db.get_collection("volunteer")
 areas = db.get_collection("areas")
 requests_list = db.get_collection("requests")
+# requests_list.remove({})
 
 areas.create_index([('name', pymongo.ASCENDING)], unique=True)
 volunteers.create_index([('chat_id', pymongo.ASCENDING)], unique=True)
@@ -52,10 +53,10 @@ def add_volunteer(name, phone, my_areas, notify, chat_id):
 
 def add_request(description, area):
     global request_id
-    info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open', 'is_done': False}
     request_id += 1
+    info = {'request_id': request_id, 'description': description, 'area': area, 'status': 'open', 'is_done': False}
     requests_list.replace_one({'description': description}, info, upsert=True)
-    return request_id-1
+    return request_id
 
 def update_volunteer_notification(chat_id):
     volunteers.update_one({'chat_id': chat_id}, {'$set': {'notify': not get_notification_status_from_DB(chat_id)}})
@@ -75,6 +76,11 @@ def add_area_to_volunteer(chat_id, area):
 def delete_area_from_volunteer(chat_id, area):
     volunteers.update_one({'chat_id': chat_id}, {'$pull': {'areas': area}})
 
+def get_requests_area(request_id):
+   return requests_list.find({'request_id': request_id})[0]['area']
+
+def get_request(request_id):
+   return requests_list.find({'request_id': request_id})
 
 
 init_areas()

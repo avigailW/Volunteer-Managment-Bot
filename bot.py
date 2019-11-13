@@ -1,15 +1,15 @@
 import secret_settings
 import general_logic
 import logging
-import requests
+from termcolor import colored
 import telegram
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, \
     InlineQueryResultGif, KeyboardButton, ReplyKeyboardMarkup, Location, CallbackQuery
 from telegram.ext import CommandHandler, CallbackContext, MessageHandler, Filters, Updater, CallbackQueryHandler, \
     ConversationHandler
-
-from model import does_area_exist, add_volunteer, get_all_areas, init_areas
-from request_logic import get_all_requests_from_DB, add_request_to_db
+from settings import colors
+from model import does_area_exist, add_volunteer, get_all_areas, init_areas, get_request
+from request_logic import get_all_requests_from_DB, add_request_to_db, update_request_status_db
 from volunteer_logic import get_notification_status, create_new_volunteer, \
     get_areas_of_volunteers, update_notification_status, delete_area_from_volunteer_DB, add_area_to_volunteer_DB
 
@@ -36,6 +36,8 @@ def start(update: Update, context: CallbackContext):
 /volunteer - to volunteer, 
 /request_help - to open a request help,
 /show_all_areas - to show all our areas,
+/show_all_open_requests - to show all the open requests,
+/show_all_open_requests - to show all the open requests
 /show_all_open_requests - to show all the open requests""",
                              reply_markup=reply_markup)
     create_new_volunteer(update, context)
@@ -74,6 +76,7 @@ def request_help(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     logger.info(f"> Open new request chat #{chat_id}")
     context.bot.send_message(chat_id=chat_id, text=f"""Enter your request description + contact info.""")
+
 
 
 def show_notification_message(update, context):
@@ -128,8 +131,21 @@ def callback_handler(update: Update, context: CallbackContext):
         update_areas_for_request(update, context)
 
     if update.callback_query.data=="confirm_area_for_request":
-        request_id=add_request_to_db(context.user_data["request_description"],context.user_data["request_area"])
+        request_id, description, volunteers = add_request_to_db(context)
+        context.user_data["message_accept_chat_message_id"]=[]
         context.bot.send_message(chat_id=update.callback_query.message.chat.id,text=f'Your request has been saved. Your case is #{request_id} for follow up.')
+        for vol in volunteers:
+           reply_markup_areas = InlineKeyboardMarkup([[InlineKeyboardButton(f"🖐 accept", callback_data=f'accept_request')]])
+           message_accept = context.bot.send_message(chat_id=vol['chat_id'], text=f'NOTIFICATION!\ncase #{request_id}: {description}.',
+                                              reply_markup=reply_markup_areas)
+           context.user_data["message_accept_chat_message_id"].append((vol['chat_id'],message_accept.message_id,request_id))
+
+    if update.callback_query.data=="accept_request":
+        for user_d in context.user_data["message_accept_chat_message_id"]:
+            context.bot.editMessageText(f"case #{user_d[2]} was taken.",chat_id=user_d[0],message_id=user_d[1])
+            update_request_status_db(user_d[2],'accepted')
+
+
 
 def show_all_areas(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
@@ -168,8 +184,12 @@ def update_areas_for_request(update, context):
     context.bot.editMessageReplyMarkup(chat_id=chat_id, message_id=context.user_data["message_area_request"],
                                        reply_markup=reply_markup_areas)
     context.bot.editMessageText(chat_id=chat_id, message_id=context.user_data["message_area_request"],
-                                text=f"""Your request area is : {context.user_data["request_area"]}""",
-                                reply_markup=reply_markup_areas)
+                                text=f'You have opened new request:\n'
+                                     f'{context.user_data["request_description"]}\n'
+                                     f'Your request area is : '
+                                     f'{context.user_data["request_area"]}',
+                                     reply_markup=reply_markup_areas)
+
 
 
 
@@ -194,8 +214,8 @@ def command_handler_buttons(update: Update, context: CallbackContext):
         keyboard_areas.append([InlineKeyboardButton(f"confirm area", callback_data=f'confirm_area_for_request')])#TODO::bold
         reply_markup_areas = InlineKeyboardMarkup(keyboard_areas)
 
-        message=context.bot.send_message(chat_id=chat_id,text=f'You have opened new request:'
-                                                                      f' {request_description}\n'
+        message=context.bot.send_message(chat_id=chat_id,text=f'You have opened new request:\n'
+                                                                      f'{request_description}\n'
                                                                       f'To approve, specify where the collect area is:',
                                  reply_markup=reply_markup_areas)
         context.user_data["message_area_request"]=message.message_id
