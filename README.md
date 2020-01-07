@@ -4,7 +4,7 @@ t.me/Mehubarim_Lachaim_bot
 volunteer managment 
 
 * Efrat Kopelowitz 
-* Avikail Wilk
+* Avigail Wilk
 * Esti David
 
 {OPTIONAL: MORE PROJECT INFO HERE}
